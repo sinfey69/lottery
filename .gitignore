@@ -41,6 +41,10 @@ test-build
 *.db-shm
 *.db-wal
 
+# Docker build files (optional - you can commit these if you want)
+# Dockerfile.linux
+# docker-build-linux.sh
+
 # Data files (optional - you may want to track these)
 *.json
 !package.json
