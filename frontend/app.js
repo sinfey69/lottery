@@ -402,15 +402,21 @@ function showConfirmDialog(title, message, okText = '确认', cancelText = '取�
 // 加载数据
 async function loadData() {
     try {
+        console.log('🔄 loadData: 开始加载数据...');
         const users = await window.go.main.App.GetUsers();
         const prizes = await window.go.main.App.GetPrizes();
         const stats = await window.go.main.App.GetStatistics();
 
+        console.log('🔄 loadData: 获取到数据 - 用户数:', users.length, '奖项数:', prizes.length);
+        
         renderUsers(users);
         renderPrizes(prizes);
         updateStats(stats);
+        
+        console.log('✅ loadData: 数据加载和渲染完成');
     } catch (error) {
-        console.error('加载数据失败:', error);
+        console.error('❌ 加载数据失败:', error);
+        console.error('错误详情:', error.message, error.stack);
     }
 }
 
@@ -419,15 +425,22 @@ function renderUsers(users) {
     const userList = document.getElementById('userList');
     const userCount = document.getElementById('userCount');
 
+    if (!userList) {
+        console.error('❌ 无法找到userList元素');
+        return;
+    }
+
     // 更新总人数显示
     if (userCount) {
         userCount.textContent = `(${users.length}人)`;
     }
 
+    // 清空列表
     userList.innerHTML = '';
 
-    if (users.length === 0) {
-        userList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无用户</p>';
+    if (!users || users.length === 0) {
+        userList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无用户，请添加用户</p>';
+        console.log('✅ 用户列表已清空，显示"暂无用户"');
         return;
     }
 
@@ -662,10 +675,31 @@ async function deleteAllUsers() {
         await window.go.main.App.DeleteAllUsers();
         console.log('✅ 删除所有用户成功');
 
-        // 重新加载数据
+        // 立即清空用户列表显示
+        const userList = document.getElementById('userList');
+        if (userList) {
+            userList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无用户，请添加用户</p>';
+        }
+        
+        // 立即更新用户计数
+        const userCount = document.getElementById('userCount');
+        if (userCount) {
+            userCount.textContent = '(0人)';
+        }
+
+        // 重新加载数据以更新统计信息和其他数据
         console.log('🔄 重新加载数据...');
-        await loadData();
-        console.log('✅ 数据加载完成');
+        try {
+            await loadData();
+            console.log('✅ 数据加载完成');
+        } catch (loadError) {
+            console.error('加载数据时出错:', loadError);
+            // 即使加载失败，也确保界面已更新
+            const stats = await window.go.main.App.GetStatistics();
+            if (stats) {
+                updateStats(stats);
+            }
+        }
 
         alert('所有用户已删除！');
         console.log('🎉 删除所有用户操作完成');
