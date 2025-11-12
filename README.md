@@ -62,9 +62,57 @@ wails build -platform windows
 ```
 
 #### Linux（包括国产系统）
+
+**重要提示**：Wails 目前不支持从 macOS 交叉编译到 Linux。如需编译 Linux 版本，请使用以下方法：
+
+**方法一：在 Linux 系统上直接编译（推荐）**
 ```bash
+# 在 Linux 系统上执行
 wails build -platform linux
 ```
+
+**方法二：使用 Docker 容器编译**
+
+我们提供了两种方式：
+
+**方式 A：使用提供的脚本（推荐）**
+```bash
+# 运行编译脚本
+./docker-build-linux.sh
+```
+
+**方式 B：手动执行 Docker 命令（快速测试）**
+```bash
+# 如果遇到网络问题，可以设置 Go 代理和 apt 镜像
+docker run --rm \
+  -v "$(pwd)":/app \
+  -w /app \
+  -e GOPROXY=https://goproxy.cn,direct \
+  golang:1.23 sh -c "
+    sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+    sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list 2>/dev/null || true && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      gcc pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev ca-certificates && \
+    go install github.com/wailsapp/wails/v2/cmd/wails@latest && \
+    export PATH=\$PATH:/go/bin && \
+    wails build -platform linux
+  "
+```
+
+**⚠️ 注意**：首次构建需要下载系统依赖，可能需要 5-10 分钟，请耐心等待。
+
+**方式 C：使用 Dockerfile（最稳定）**
+```bash
+# 构建镜像
+docker build -f Dockerfile.linux -t lottery-builder:linux .
+
+# 运行编译
+docker run --rm -v "$(pwd)":/app -w /app lottery-builder:linux
+```
+
+**方法三：使用 GitHub Actions 或其他 CI/CD 服务**
+在 Linux 环境的 CI/CD 中自动编译。
 
 编译后的可执行文件会在 `build/bin` 目录下。
 
@@ -216,3 +264,4 @@ MIT License
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
+

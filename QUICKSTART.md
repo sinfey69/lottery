@@ -43,9 +43,34 @@ wails build -platform windows
 ```
 
 #### Linux（包括国产系统如统信UOS、麒麟等）
-```bash
-wails build -platform linux
-```
+
+**⚠️ 注意**：Wails 不支持从 macOS 交叉编译到 Linux。如需编译 Linux 版本，请：
+
+1. **在 Linux 系统上直接编译**（推荐）
+   ```bash
+   wails build -platform linux
+   ```
+
+2. **使用 Docker 容器编译**
+   
+   **方式 A：使用提供的脚本（推荐）**
+   ```bash
+   ./docker-build-linux.sh
+   ```
+   
+   **方式 B：手动执行（如果遇到网络问题，设置 Go 代理）**
+   ```bash
+   docker run --rm \
+     -v "$(pwd)":/app \
+     -w /app \
+     -e GOPROXY=https://goproxy.cn,direct \
+     golang:1.23 sh -c "
+       apt-get update && apt-get install -y gcc pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev && \
+       go install github.com/wailsapp/wails/v2/cmd/wails@latest && \
+       export PATH=\$PATH:/go/bin && \
+       wails build -platform linux
+     "
+   ```
 
 编译后的文件在 `build/bin/` 目录下。
 
