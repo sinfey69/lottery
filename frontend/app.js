@@ -407,16 +407,25 @@ async function loadData() {
         const prizes = await window.go.main.App.GetPrizes();
         const stats = await window.go.main.App.GetStatistics();
 
-        console.log('🔄 loadData: 获取到数据 - 用户数:', users.length, '奖项数:', prizes.length);
+        // 确保数据是数组，防止 null 或 undefined
+        const safeUsers = Array.isArray(users) ? users : [];
+        const safePrizes = Array.isArray(prizes) ? prizes : [];
+        const safeStats = stats || {};
+
+        console.log('🔄 loadData: 获取到数据 - 用户数:', safeUsers.length, '奖项数:', safePrizes.length);
         
-        renderUsers(users);
-        renderPrizes(prizes);
-        updateStats(stats);
+        renderUsers(safeUsers);
+        renderPrizes(safePrizes);
+        updateStats(safeStats);
         
         console.log('✅ loadData: 数据加载和渲染完成');
     } catch (error) {
         console.error('❌ 加载数据失败:', error);
         console.error('错误详情:', error.message, error.stack);
+        // 即使出错也尝试渲染空数据，避免界面卡死
+        renderUsers([]);
+        renderPrizes([]);
+        updateStats({ totalUsers: 0, wonUsers: 0, availableUsers: 0 });
     }
 }
 
@@ -430,6 +439,12 @@ function renderUsers(users) {
         return;
     }
 
+    // 确保 users 是数组
+    if (!Array.isArray(users)) {
+        console.warn('⚠️ renderUsers: users 不是数组，使用空数组');
+        users = [];
+    }
+
     // 更新总人数显示
     if (userCount) {
         userCount.textContent = `(${users.length}人)`;
@@ -438,7 +453,7 @@ function renderUsers(users) {
     // 清空列表
     userList.innerHTML = '';
 
-    if (!users || users.length === 0) {
+    if (users.length === 0) {
         userList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无用户，请添加用户</p>';
         console.log('✅ 用户列表已清空，显示"暂无用户"');
         return;
@@ -509,6 +524,12 @@ function renderPrizes(prizes) {
     const prizeList = document.getElementById('prizeList');
     const prizeSelect = document.getElementById('prizeSelect');
     const fullscreenPrizeSelect = document.getElementById('fullscreenPrizeSelect');
+
+    // 确保 prizes 是数组
+    if (!Array.isArray(prizes)) {
+        console.warn('⚠️ renderPrizes: prizes 不是数组，使用空数组');
+        prizes = [];
+    }
 
     prizeList.innerHTML = '';
     prizeSelect.innerHTML = '<option value="">请选择奖项</option>';
@@ -600,9 +621,19 @@ function renderPrizes(prizes) {
 
 // 更新统计信息
 function updateStats(stats) {
-    document.getElementById('totalUsers').textContent = stats.totalUsers;
-    document.getElementById('wonUsers').textContent = stats.wonUsers;
-    document.getElementById('availableUsers').textContent = stats.availableUsers;
+    // 确保 stats 是对象，防止 null 或 undefined
+    if (!stats || typeof stats !== 'object') {
+        console.warn('⚠️ updateStats: stats 不是有效对象，使用默认值');
+        stats = { totalUsers: 0, wonUsers: 0, availableUsers: 0 };
+    }
+
+    const totalUsersEl = document.getElementById('totalUsers');
+    const wonUsersEl = document.getElementById('wonUsers');
+    const availableUsersEl = document.getElementById('availableUsers');
+
+    if (totalUsersEl) totalUsersEl.textContent = stats.totalUsers || 0;
+    if (wonUsersEl) wonUsersEl.textContent = stats.wonUsers || 0;
+    if (availableUsersEl) availableUsersEl.textContent = stats.availableUsers || 0;
 }
 
 // 显示添加用户模态框
@@ -1094,8 +1125,28 @@ async function performDraw(prizeId) {
                 fullscreenContent.innerHTML = resultHTML;
             }
 
+            // 保存当前选择的奖项ID
+            const currentPrizeId = prizeId;
+            
             // 更新数据
-            loadData();
+            await loadData();
+            
+            // 检查奖项是否还有剩余名额，决定是否保留选择
+            const prizes = await window.go.main.App.GetPrizes();
+            const currentPrize = Array.isArray(prizes) ? prizes.find(p => p.id === currentPrizeId) : null;
+            
+            const prizeSelect = document.getElementById('prizeSelect');
+            const fullscreenPrizeSelect = document.getElementById('fullscreenPrizeSelect');
+            
+            if (currentPrize && currentPrize.drawnCount < currentPrize.count) {
+                // 还有剩余名额，保留选择
+                if (prizeSelect) prizeSelect.value = currentPrizeId;
+                if (fullscreenPrizeSelect) fullscreenPrizeSelect.value = currentPrizeId;
+            } else {
+                // 没有剩余名额，清空选择
+                if (prizeSelect) prizeSelect.value = '';
+                if (fullscreenPrizeSelect) fullscreenPrizeSelect.value = '';
+            }
 
             // 抽奖结束，不再显示确认对话框
         } else {
@@ -1451,8 +1502,28 @@ async function performDrawFullscreen(prizeId) {
                 contentContainer.innerHTML = resultHTML;
             }
 
+            // 保存当前选择的奖项ID
+            const currentPrizeId = prizeId;
+            
             // 更新数据
-            loadData();
+            await loadData();
+            
+            // 检查奖项是否还有剩余名额，决定是否保留选择
+            const prizes = await window.go.main.App.GetPrizes();
+            const currentPrize = Array.isArray(prizes) ? prizes.find(p => p.id === currentPrizeId) : null;
+            
+            const prizeSelect = document.getElementById('prizeSelect');
+            const fullscreenPrizeSelect = document.getElementById('fullscreenPrizeSelect');
+            
+            if (currentPrize && currentPrize.drawnCount < currentPrize.count) {
+                // 还有剩余名额，保留选择
+                if (prizeSelect) prizeSelect.value = currentPrizeId;
+                if (fullscreenPrizeSelect) fullscreenPrizeSelect.value = currentPrizeId;
+            } else {
+                // 没有剩余名额，清空选择
+                if (prizeSelect) prizeSelect.value = '';
+                if (fullscreenPrizeSelect) fullscreenPrizeSelect.value = '';
+            }
 
             // 抽奖结束，不再显示确认对话框
         } else {
