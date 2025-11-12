@@ -1,0 +1,23 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "lottery",
+  "outputfilename": "lottery",
+  "frontend": {
+    "dir": "./frontend",
+    "install": "",
+    "build": "",
+    "bridge": "src/bridge.js",
+    "serve": ""
+  },
+  "author": {
+    "name": "Lottery App",
+    "email": ""
+  },
+  "info": {
+    "productName": "抽奖程序",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2024",
+    "comments": "一个公平公正的抽奖程序"
+  }
+}
+

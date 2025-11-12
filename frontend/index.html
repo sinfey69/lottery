@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽奖程序</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎁 抽奖程序</h1>
+            <div class="stats" id="stats">
+                <span>总用户: <strong id="totalUsers">0</strong></span>
+                <span>已中奖: <strong id="wonUsers">0</strong></span>
+                <span>可抽奖: <strong id="availableUsers">0</strong></span>
+            </div>
+        </header>
+
+        <!-- Tab导航 -->
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('management')" id="tabManagement">
+                    📋 用户与奖项管理
+                </button>
+                <button class="tab-btn" onclick="switchTab('lottery')" id="tabLottery">
+                    🎲 抽奖
+                </button>
+            </div>
+        </div>
+
+        <!-- 管理Tab -->
+        <div id="managementTab" class="tab-content active">
+            <div class="main-content">
+                <!-- 左侧：用户管理 -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>👥 用户管理 <span id="userCount" style="font-size: 14px; color: #666; font-weight: normal;">(0人)</span></h2>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-primary" onclick="showAddUserModal()">+ 添加用户</button>
+                            <button class="btn btn-secondary" onclick="showImportCSVModal()" title="CSV导入">📥 CSV导入</button>
+                            <button class="btn btn-secondary" onclick="showImportFolderModal()" title="文件夹导入">📁 文件夹导入</button>
+                            <button class="btn btn-danger" onclick="deleteAllUsers()" title="删除所有用户">🗑️ 删除所有用户</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="user-list" id="userList"></div>
+                    </div>
+                </div>
+
+                <!-- 右侧：奖项管理 -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>🏆 奖项管理</h2>
+                        <button class="btn btn-primary" onclick="showAddPrizeModal()">+ 添加奖项</button>
+                    </div>
+                    <div class="panel-body">
+                        <div class="prize-list" id="prizeList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 抽奖Tab -->
+        <div id="lotteryTab" class="tab-content">
+            <div class="panel lottery-panel-full">
+                <div class="panel-header">
+                    <h2>🎲 开始抽奖</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="lottery-controls">
+                        <select id="prizeSelect" class="select-input">
+                            <option value="">请选择奖项</option>
+                        </select>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                            <label style="font-size: 14px; color: #666; white-space: nowrap;">抽奖时长（秒）：</label>
+                            <input type="number" id="drawDuration" min="2" max="30" value="4" step="1" style="width: 80px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;" onchange="saveDrawDuration()" onkeydown="handleNumberInputKeydown(event)">
+                        </div>
+                        <button class="btn btn-draw" id="drawBtn" onclick="startDraw()">开始抽奖</button>
+                        <button class="btn btn-reset" onclick="resetLottery()">重置抽奖</button>
+                        <button class="btn btn-fullscreen" onclick="toggleFullscreen()" title="全屏模式">
+                            <span id="fullscreenIcon">⛶</span> 全屏
+                        </button>
+                        <button class="btn btn-winners" onclick="showWinnersModal()" title="查看中奖列表">
+                            🏆 中奖列表
+                        </button>
+                        <button class="btn btn-secondary" onclick="showBackgroundModal()" title="设置背景图" style="margin-top: 10px;">
+                            🖼️ 设置背景
+                        </button>
+                    </div>
+                    <div class="lottery-display" id="lotteryDisplay">
+                        <div id="lotteryBackground" class="lottery-background"></div>
+                        <div id="lotteryContent" class="lottery-content">
+                            <div class="lottery-placeholder">
+                                <p>点击"开始抽奖"按钮开始</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加用户模态框 -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addUserModal')">&times;</span>
+            <h2>添加用户</h2>
+            <form id="addUserForm" onsubmit="addUser(event)">
+                <div class="form-group">
+                    <label>姓名：</label>
+                    <input type="text" id="userName">
+                    <small style="color: #999; display: block; margin-top: 5px;">如果不填写，将使用照片文件名作为姓名</small>
+                </div>
+                <div class="form-group">
+                    <label>照片（可选）：</label>
+                    <input type="file" id="userPhoto" accept="image/*" onchange="handlePhotoUpload(event)">
+                    <small>如果不上传照片，抽奖时将显示姓名</small>
+                    <div class="photo-preview" id="photoPreview"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">添加</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addUserModal')">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 添加奖项模态框 -->
+    <div id="addPrizeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addPrizeModal')">&times;</span>
+            <h2>添加奖项</h2>
+            <form id="addPrizeForm" onsubmit="addPrize(event)">
+                <div class="form-group">
+                    <label>奖项名称：</label>
+                    <input type="text" id="prizeName" required>
+                </div>
+                <div class="form-group">
+                    <label>奖项描述：</label>
+                    <textarea id="prizeDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>中奖数量：</label>
+                    <input type="number" id="prizeCount" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>奖项等级：</label>
+                    <input type="number" id="prizeLevel" min="1" value="1" required>
+                    <small>数字越小等级越高</small>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">添加</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addPrizeModal')">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 抽奖结果模态框 -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content result-modal">
+            <h2 id="resultTitle">抽奖结果</h2>
+            <div id="resultContent"></div>
+            <button class="btn btn-primary" onclick="closeModal('resultModal')">确定</button>
+        </div>
+    </div>
+
+    <!-- 中奖列表模态框 -->
+    <div id="winnersModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('winnersModal')">&times;</span>
+            <h2>🏆 中奖用户列表</h2>
+            <div class="winners-list" id="winnersList">
+                <p style="text-align: center; color: #999; padding: 20px;">暂无中奖用户</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV导入模态框 -->
+    <div id="importCSVModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('importCSVModal')">&times;</span>
+            <h2>📥 CSV导入用户</h2>
+            <div class="form-group">
+                <label>CSV格式说明：</label>
+                <small style="display: block; margin-bottom: 10px; color: #666;">
+                    每行一个用户，格式：姓名,照片base64（可选）<br>
+                    示例：<br>
+                    张三<br>
+                    李四,data:image/png;base64,iVBORw0KG...<br>
+                    王五
+                </small>
+            </div>
+            <form id="importCSVForm" onsubmit="importUsersFromCSV(event)">
+                <div class="form-group">
+                    <label>CSV内容：</label>
+                    <textarea id="csvData" rows="10" placeholder="请输入或粘贴CSV数据..." style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: monospace;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>或上传CSV文件：</label>
+                    <input type="file" id="csvFile" accept=".csv,text/plain" onchange="handleCSVFileUpload(event)">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">导入</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('importCSVModal')">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 全屏抽奖模式 -->
+    <div id="fullscreenLottery" class="fullscreen-lottery">
+        <div class="fullscreen-controls" id="fullscreenControls">
+            <div class="floating-controls">
+                <select id="fullscreenPrizeSelect" class="select-input floating-select">
+                    <option value="">请选择奖项</option>
+                </select>
+                <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
+                    <label style="font-size: 12px; color: #333; white-space: nowrap;">时长（秒）：</label>
+                    <input type="number" id="fullscreenDrawDuration" min="2" max="30" value="4" step="1" style="width: 60px; padding: 5px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 12px;" onchange="saveDrawDuration()" onkeydown="handleNumberInputKeydown(event)">
+                </div>
+                <button class="btn btn-draw floating-btn" id="fullscreenDrawBtn" onclick="startDrawFullscreen()">开始抽奖</button>
+                <button class="btn btn-exit-fullscreen floating-btn" onclick="toggleFullscreen()" title="退出全屏">
+                    ✕ 退出全屏
+                </button>
+            </div>
+        </div>
+        <div class="fullscreen-display" id="fullscreenDisplay">
+            <div id="fullscreenBackground" class="lottery-background"></div>
+            <div id="fullscreenContent" class="lottery-content">
+                <div class="lottery-placeholder">
+                    <p>点击"开始抽奖"按钮开始</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 背景图设置对话框 -->
+    <div id="backgroundModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('backgroundModal')">&times;</span>
+            <h2>🖼️ 设置背景图</h2>
+            <p style="color: #666; margin-bottom: 15px;">支持图片和GIF动态图，图片会自动适应大小</p>
+            <form id="backgroundForm" onsubmit="setBackground(event)">
+                <div class="form-group">
+                    <label>选择背景图：</label>
+                    <input type="file" id="backgroundInput" accept="image/*" onchange="previewBackground(event)">
+                    <small style="color: #999; display: block; margin-top: 5px;">支持 JPG、PNG、GIF 等格式</small>
+                </div>
+                <div id="backgroundPreview" style="margin: 15px 0; max-height: 300px; overflow: hidden; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9; text-align: center;">
+                    <p style="color: #999;">选择图片后将显示预览</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">应用背景</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetBackground()">恢复默认</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('backgroundModal')">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 文件夹导入用户对话框 -->
+    <div id="importFolderModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('importFolderModal')">&times;</span>
+            <h2>📁 从文件夹导入用户</h2>
+            <p style="color: #666; margin-bottom: 15px;">选择包含照片的文件夹，文件名将作为用户姓名</p>
+            <form id="importFolderForm" onsubmit="importUsersFromFolder(event)">
+                <div class="form-group">
+                    <label>选择文件夹：</label>
+                    <input type="file" id="folderInput" webkitdirectory directory multiple accept="image/*" required>
+                    <small style="color: #999; display: block; margin-top: 5px;">支持选择整个文件夹，会自动导入文件夹中的所有图片</small>
+                </div>
+                <div id="folderPreview" style="margin: 15px 0; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
+                    <p style="color: #999; text-align: center;">选择文件夹后将显示预览</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">导入</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('importFolderModal')">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 确认删除对话框 -->
+    <div id="confirmDeleteModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 id="confirmDeleteTitle" style="margin-bottom: 15px; color: #d32f2f;">确认删除</h3>
+            <p id="confirmDeleteMessage" style="margin-bottom: 20px; line-height: 1.6; white-space: pre-line;"></p>
+            <div style="text-align: right; margin-top: 20px;">
+                <button id="confirmDeleteCancel" class="btn btn-secondary" style="margin-right: 10px;">取消</button>
+                <button id="confirmDeleteOk" class="btn btn-danger">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
