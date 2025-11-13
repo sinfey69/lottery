@@ -16,7 +16,7 @@ if [[ "$OS" != "Linux" ]]; then
     echo "解决方案："
     echo "1. 在 Linux 系统上运行此脚本（推荐）"
     echo "2. 使用 Linux 虚拟机或 Docker 容器"
-    echo "3. 使用项目提供的 Docker 编译脚本: ./docker-build-linux.sh"
+    echo "3. 使用项目提供的 Docker 打包脚本: ./docker-package-linux.sh（推荐）"
     echo ""
     echo "或者，您可以先编译 Linux 应用："
     echo "  wails build -platform linux"
@@ -91,6 +91,10 @@ Maintainer: Your Name <you@example.com>
 Description: Lottery Application
 EOF
 
+    # 设置 DEBIAN 目录权限（dpkg-deb 要求权限在 0755-0775 之间）
+    chmod 755 $PKG_DIR/DEBIAN
+    chmod 644 $PKG_DIR/DEBIAN/control
+
     echo ""
     echo "步骤 4/4: 构建 DEB 包..."
     dpkg-deb --build $PKG_DIR build/installers/lottery.deb
@@ -114,9 +118,11 @@ else
     echo "Linux 应用位置: build/bin/lottery"
     echo ""
     echo "⚠️  注意: 由于当前不在 Linux 系统上，无法创建安装包"
-    echo "请将编译好的文件复制到 Linux 系统，然后："
+    echo "请使用 Docker 打包脚本（推荐）："
+    echo "  ./docker-package-linux.sh"
+    echo ""
+    echo "或者，将编译好的文件复制到 Linux 系统，然后："
     echo "1. 安装 dpkg-dev: sudo apt-get install dpkg-dev"
     echo "2. 在 Linux 上运行此脚本创建安装包"
-    echo "   或使用 Docker 编译脚本: ./docker-build-linux.sh"
     echo "=========================================="
 fi

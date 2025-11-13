@@ -21,6 +21,7 @@ RUN apt-get update && \
     libwebkit2gtk-4.0-dev \
     libwebkit2gtk-4.1-dev \
     ca-certificates \
+    dpkg-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

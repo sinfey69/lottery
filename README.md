@@ -163,7 +163,39 @@ docker run --rm -v "$(pwd)":/app -w /app lottery-builder:linux
 
 ### Linux
 
-**⚠️ 重要提示**：Linux 打包脚本必须在 Linux 系统上运行，因为 `dpkg-deb` 只能在 Linux 上运行。
+#### 方法一：使用 Docker 打包（推荐，支持所有平台）
+
+**适用于 macOS、Windows 和 Linux 系统**
+
+1. **确保已安装 Docker**：
+   ```bash
+   docker --version
+   ```
+
+2. **运行 Docker 打包脚本**：
+   ```bash
+   chmod +x docker-package-linux.sh
+   ./docker-package-linux.sh
+   ```
+
+3. **生成的 DEB 包**：
+   - 位置：`build/installers/lottery.deb`
+   - 用户可以使用以下命令安装：
+     ```bash
+     sudo dpkg -i build/installers/lottery.deb
+     ```
+
+**优点**：
+- ✅ 可在任何支持 Docker 的系统上运行（macOS、Windows、Linux）
+- ✅ 自动处理所有依赖
+- ✅ 环境隔离，不影响本地系统
+- ✅ 解决了 macOS 上 Docker 卷挂载的权限问题（在容器内临时目录构建）
+
+**技术说明**：Docker 打包脚本在容器内的临时目录（`/tmp`）创建包结构并构建 DEB 包，避免了 macOS 上 Docker 卷挂载时的文件权限限制问题，确保打包过程稳定可靠。
+
+#### 方法二：在 Linux 系统上直接打包
+
+**⚠️ 重要提示**：此方法必须在 Linux 系统上运行，因为 `dpkg-deb` 只能在 Linux 上运行。
 
 1. **安装依赖**（如果未安装）：
    ```bash
@@ -187,7 +219,7 @@ docker run --rm -v "$(pwd)":/app -w /app lottery-builder:linux
 - 如果您在 macOS 或 Windows 上，脚本会提示您并询问是否只编译应用（不创建安装包）
 - 编译完成后，您可以将 `build/bin/lottery` 复制到 Linux 系统上，然后：
   - 在 Linux 上运行打包脚本，或
-  - 使用项目提供的 Docker 编译脚本：`./docker-build-linux.sh`（推荐）
+  - 使用 Docker 打包脚本：`./docker-package-linux.sh`（推荐）
 
 **注意**：所有打包脚本会自动执行编译步骤，无需提前手动编译。
 
