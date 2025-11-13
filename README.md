@@ -116,6 +116,81 @@ docker run --rm -v "$(pwd)":/app -w /app lottery-builder:linux
 
 编译后的可执行文件会在 `build/bin` 目录下。
 
+## 打包安装程序
+
+为了方便普通用户安装使用，可以将编译后的应用打包成各平台的安装包。
+
+### macOS
+
+1. **安装依赖**（如果未安装）：
+   ```bash
+   brew install create-dmg
+   ```
+
+2. **运行打包脚本**：
+   ```bash
+   chmod +x scripts/macos/build-dmg.sh
+   ./scripts/macos/build-dmg.sh
+   ```
+
+3. **生成的 DMG 文件**：
+   - 位置：`build/installers/Lottery.dmg`
+   - 用户可以直接双击 DMG 文件，将应用拖拽到 Applications 文件夹完成安装
+
+### Windows
+
+**⚠️ 重要提示**：Windows 打包脚本必须在 Windows 系统上运行，因为 Inno Setup 只能在 Windows 上运行。
+
+1. **安装依赖**：
+   - 下载并安装 [Inno Setup](https://jrsoftware.org/isdl.php)
+   - 确保 `iscc` 命令在系统 PATH 中
+
+2. **运行打包脚本**：
+   ```bash
+   chmod +x scripts/windows/build-installer.sh
+   ./scripts/windows/build-installer.sh
+   ```
+
+3. **生成的安装程序**：
+   - 位置：`build/installers/LotterySetup.exe`
+   - 用户可以直接运行安装程序进行安装
+
+**在非 Windows 系统上**：
+- 如果您在 macOS 或 Linux 上，脚本会提示您并询问是否只编译应用（不创建安装包）
+- 编译完成后，您可以将 `build/bin/lottery.exe` 复制到 Windows 系统上，然后：
+  - 在 Windows 上运行打包脚本，或
+  - 使用 Inno Setup 手动创建安装程序
+
+### Linux
+
+**⚠️ 重要提示**：Linux 打包脚本必须在 Linux 系统上运行，因为 `dpkg-deb` 只能在 Linux 上运行。
+
+1. **安装依赖**（如果未安装）：
+   ```bash
+   sudo apt-get install dpkg-dev
+   ```
+
+2. **运行打包脚本**：
+   ```bash
+   chmod +x scripts/linux/build-deb.sh
+   ./scripts/linux/build-deb.sh
+   ```
+
+3. **生成的 DEB 包**：
+   - 位置：`build/installers/lottery.deb`
+   - 用户可以使用以下命令安装：
+     ```bash
+     sudo dpkg -i build/installers/lottery.deb
+     ```
+
+**在非 Linux 系统上**：
+- 如果您在 macOS 或 Windows 上，脚本会提示您并询问是否只编译应用（不创建安装包）
+- 编译完成后，您可以将 `build/bin/lottery` 复制到 Linux 系统上，然后：
+  - 在 Linux 上运行打包脚本，或
+  - 使用项目提供的 Docker 编译脚本：`./docker-build-linux.sh`（推荐）
+
+**注意**：所有打包脚本会自动执行编译步骤，无需提前手动编译。
+
 ## 使用说明
 
 ### 1. 添加用户
